@@ -3,7 +3,6 @@
 		<div class="indentation">
 			<button v-on:click="addFiveMinutes">Плюс</button>
 			<button @click="subtractFiveMinutes">Минус</button>
-			<button @click="getFullHours">ncn</button>
 		</div>
 		<div class="timer indentation"><p class="text">{{ hours }}:{{ minutes }}:{{ seconds }} </p></div>
 		<div class="start indentation">
@@ -18,16 +17,6 @@
 export default {
   data() {
 
-	
-	//const minutes = now.getMinutes();
-	//const seconds = now.getSeconds();
-	//const totalTime = (hours * 3600 + minutes * 60 + seconds) * 1000;
-
-	//const hours2 = Math.floor(totalTime / 3600000);
-	//const minutes2 = Math.floor((totalTime % 3600000) / 60000);
-	//const seconds2 = Math.floor((totalTime % 60000) / 1000);
-
-	//const all = (`${hours}`)
     return {
 		hours: '00',
 		minutes: '10',
@@ -36,39 +25,35 @@ export default {
   },
   methods: {
     addFiveMinutes() {
-		if(Number(this.minutes) == 50) {
+		if(Number(this.minutes) == 55) {
 			if(Number(this.hours) < 10) {
 				this.hours = '0' + ((Number(this.hours) + 1).toString());
 				this.minutes = '00';
-				if(this.hours == '010') {
-					this.hours = '10';
-				}
 			} else {
 				this.hours = (Number(this.hours) + 1).toString();
 				this.minutes = '00';
 			}
-
-		} else {
-			this.minutes = (Number(this.minutes) + 10).toString();
+		} else if(Number(this.hours) <= 1 ) {
+			this.minutes = (Number(this.minutes) + 5).toString();
+			if(Number(this.minutes) < 10) {
+				this.minutes = '0' + (Number(this.minutes)).toString();
+			}
 		}
-
     },
     subtractFiveMinutes() {
-		/*if(Number(this.minutes) > 10) {
-			
-		}*/
-		this.minutes = (Number(this.minutes) - 5).toString();
-    },
-	getFullHours(){
-		const now = 3700000;
-		this.hours = now / 3600000
-		if(this.hours <= 1) {
-			return this.hours = '00'
-		} else {
-			return this.hours = 10
+		if(Number(this.hours) < 1 && Number(this.minutes) > 10) {
+			this.minutes = (Number(this.minutes) - 5).toString();
 		}
-		
-	}
+		if(Number(this.hours) >= 1 && Number(this.minutes) == 0) {
+			this.minutes = '55';
+			this.hours = '0' + ((Number(this.hours) - 1).toString());
+		} else if(Number(this.hours) >= 1) {
+			this.minutes = (Number(this.minutes) - 5).toString();
+			if(Number(this.minutes) < 10) {
+				this.minutes = '0' + (Number(this.minutes)).toString();
+			}
+		}
+    }
   }
 }
 </script>
