@@ -7,7 +7,7 @@
 		<div class="timer indentation"><p class="text">{{ hours }}:{{ minutes }}:{{ seconds }} </p></div>
 		<div class="start indentation">
 			<a href="#">
-				<span class="start-timer">Начать</span>
+				<span class="start-timer" @click="addToBase">Начать</span>
 			</a>
 		</div>
 	</section>
@@ -16,46 +16,65 @@
 <script>
 export default {
   data() {
-
+	
     return {
-		hours: '00',
+		dateNow: new Date(),
+		hours: null,
+		minutes: null,
+		seconds: null,
+		/*hours: '00',
 		minutes: '10',
-		seconds: '00'
+		seconds: '00',*/
+		base: []
     }
   },
+  mounted() {
+		this.dateNow.setHours(0, 10, 0);
+		this.updateTime();
+	},
+
   methods: {
+	updateTime() {
+		this.hours = this.dateNow.getHours() < 10 ? "0" + this.dateNow.getHours() : this.dateNow.getHours();
+		this.minutes = this.dateNow.getMinutes() < 10 ? "0" + this.dateNow.getMinutes() : this.dateNow.getMinutes();
+		this.seconds = this.dateNow.getSeconds() < 10 ? "0" + this.dateNow.getSeconds() : this.dateNow.getSeconds();
+	},
     addFiveMinutes() {
-		if(Number(this.minutes) == 55) {
-			if(Number(this.hours) < 10) {
-				this.hours = '0' + ((Number(this.hours) + 1).toString());
-				this.minutes = '00';
-			} else {
-				this.hours = (Number(this.hours) + 1).toString();
-				this.minutes = '00';
-			}
-		} else if(Number(this.hours) <= 1 ) {
-			this.minutes = (Number(this.minutes) + 5).toString();
-			if(Number(this.minutes) < 10) {
-				this.minutes = '0' + (Number(this.minutes)).toString();
-			}
+		if(this.dateNow.getHours() <= 1) {
+			this.dateNow.setMinutes(this.dateNow.getMinutes() + 5)
+			this.updateTime();
 		}
     },
     subtractFiveMinutes() {
-		if(Number(this.hours) < 1 && Number(this.minutes) > 10) {
-			this.minutes = (Number(this.minutes) - 5).toString();
+		if(this.dateNow.getMinutes() > 10 && this.dateNow.getHours() == 0 || this.dateNow.getHours() == 1 || this.dateNow.getHours() == 2) {
+			this.dateNow.setMinutes(this.dateNow.getMinutes() - 5)
+			this.updateTime();
 		}
-		if(Number(this.hours) >= 1 && Number(this.minutes) == 0) {
-			this.minutes = '55';
-			this.hours = '0' + ((Number(this.hours) - 1).toString());
-		} else if(Number(this.hours) >= 1) {
-			this.minutes = (Number(this.minutes) - 5).toString();
-			if(Number(this.minutes) < 10) {
-				this.minutes = '0' + (Number(this.minutes)).toString();
-			}
+    },
+	addToBase() {
+		let time = {
+			hour: this.hours,
+			minute: this.minutes,
+			second: this.seconds
+		};
+		this.base.push(time);
+		fetch('http://127.0.0.1:8000',{
+			method: "GET", // *GET, POST, PUT, DELETE, etc.
+			//mode: "no-cors", // no-cors, *cors, same-origin
+
+			headers: {
+			"accept": "application/json",
+			"content-type": "application/json",
+			// 'Content-Type': 'application/x-www-form-urlencoded',
+			},
 		}
-    }
+		)
+			.then(response => response.json())
+			.then(data => console.log(data))
+	}
   }
 }
+
 </script>
 
 <style>
