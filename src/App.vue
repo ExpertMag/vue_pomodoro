@@ -1,14 +1,16 @@
 <template>
 	<section id="wrapper">
 		<div class="indentation">
-			<button v-on:click="addFiveMinutes">Плюс</button>
 			<button @click="subtractFiveMinutes">Минус</button>
+			<button v-on:click="addFiveMinutes">Плюс</button>
 		</div>
 		<div class="timer indentation"><p class="text">{{ hours }}:{{ minutes }}:{{ seconds }} </p></div>
 		<div class="start indentation">
-			<a href="#">
-				<span class="start-timer" @click="addToBase">Начать</span>
-			</a>
+			<button @click="startTimer" :disabled=disabled v-show="isVisible">Старт</button>
+			<button @click="pauseTimer" :disabled=!disabled v-show="!isVisible">Пауза</button>
+			<button @click="resetTimer" v-show="!isVisibleReset">Сбросить таймер</button>
+			<!--<span class="start-timer" @click="startTimer" :disabled="disabled == 1 ? true : false">Начать</span>-->
+
 		</div>
 	</section>
 </template>
@@ -22,15 +24,19 @@ export default {
 		hours: null,
 		minutes: null,
 		seconds: null,
-		/*hours: '00',
-		minutes: '10',
-		seconds: '00',*/
-		base: []
+		base: [],
+		statusTimer: '',
+		disabled: false,
+		isVisible: true,
+		isVisibleReset: true,
+		counterId: null,
+		buttonText: null,
     }
   },
   mounted() {
 		this.dateNow.setHours(0, 10, 0);
 		this.updateTime();
+		this.buttonText = document.querySelector('.start.indentation button')
 	},
 
   methods: {
@@ -51,14 +57,29 @@ export default {
 			this.updateTime();
 		}
     },
-	addToBase() {
+	startTimer() {
+		this.toggleVisibility();
+		this.isVisibleReset = false
 		let time = {
+			id: this.base.length,
 			hour: this.hours,
 			minute: this.minutes,
 			second: this.seconds
 		};
 		this.base.push(time);
-		fetch('http://127.0.0.1:8000',{
+
+		
+		const minusTimer = () => {
+			this.dateNow.setSeconds(this.dateNow.getSeconds() - 1);
+			this.updateTime();
+			if(this.hours == 0 && this.minutes == 0 && this.seconds == 0) {
+				clearInterval(this.counterId);
+			}
+		}
+		this.counterId = setInterval(minusTimer, 1000);
+
+
+		/*fetch('http://127.0.0.1:8000',{
 			method: "GET", // *GET, POST, PUT, DELETE, etc.
 			//mode: "no-cors", // no-cors, *cors, same-origin
 
@@ -70,7 +91,25 @@ export default {
 		}
 		)
 			.then(response => response.json())
-			.then(data => console.log(data))
+			.then(data => console.log(data))*/
+	},
+	toggleVisibility() {
+		this.isVisible = !this.isVisible;
+		this.disabled = !this.disabled;
+    },
+	pauseTimer() {
+		clearInterval(this.counterId);
+		this.isVisible = !this.isVisible;
+		this.disabled = !this.disabled;
+		this.buttonText.innerText = 'Продолжить';
+	},
+	resetTimer() {
+		clearInterval(this.counterId);
+		this.dateNow.setHours(0, 10, 0);
+		this.updateTime();
+		this.isVisibleReset = true;
+		this.toggleVisibility();
+		this.buttonText.innerText = 'Старт';
 	}
   }
 }
@@ -101,7 +140,7 @@ body {
 /*таймер*/
 .timer {
     text-transform: uppercase;
-    font-size: 24px;
+    font-size: 45px;
 }
 .text {
 	margin: 0px;
@@ -116,7 +155,7 @@ body {
 	flex-direction: column;
 }
 
-.start a{
+/*.start a{
 	position: relative;
 	width: 160px;
 	height: 60px;
@@ -175,5 +214,5 @@ body {
 	height: 100%;
 	background: rgba(255,255,255,0.075);
 	transform: skew(25deg)
-}
+}*/
 </style>
