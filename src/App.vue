@@ -1,117 +1,158 @@
 <template>
 	<section id="wrapper">
-		<div class="indentation">
-			<button @click="subtractFiveMinutes">Минус</button>
-			<button v-on:click="addFiveMinutes">Плюс</button>
+		<div>
+			<div class="indentation">
+				<p>{{ textIsWork }}</p>
+			</div>
+			<div class="indentation">
+				<button @click="subtractMinutes">Минус</button>
+				<button v-on:click="addMinutes">Плюс</button>
+			</div>
+			<div class="timer indentation"><p class="text">{{ hours }}:{{ minutes }}:{{ seconds }} </p></div>
+			<div class="start indentation">
+				<button @click="startTimer" :disabled=disabled v-show="isVisible">Старт</button>
+				<button @click="pauseTimer" :disabled=!disabled v-show="!isVisible">Пауза</button>
+				<button @click="resetTimer" v-show="!isVisibleReset">Сбросить таймер</button>
+				<!--<span class="start-timer" @click="startTimer" :disabled="disabled == 1 ? true : false">Начать</span>-->
+			</div>
 		</div>
-		<div class="timer indentation"><p class="text">{{ hours }}:{{ minutes }}:{{ seconds }} </p></div>
-		<div class="start indentation">
-			<button @click="startTimer" :disabled=disabled v-show="isVisible">Старт</button>
-			<button @click="pauseTimer" :disabled=!disabled v-show="!isVisible">Пауза</button>
-			<button @click="resetTimer" v-show="!isVisibleReset">Сбросить таймер</button>
-			<!--<span class="start-timer" @click="startTimer" :disabled="disabled == 1 ? true : false">Начать</span>-->
-
-		</div>
+		<FormDescription v-if="this.isWork == false" />
 	</section>
 </template>
 
 <script>
+import FormDescription from '@/components/FormDescription.vue';
+
 export default {
-  data() {
-	
-    return {
-		dateNow: new Date(),
-		hours: null,
-		minutes: null,
-		seconds: null,
-		base: [],
-		statusTimer: '',
-		disabled: false,
-		isVisible: true,
-		isVisibleReset: true,
-		counterId: null,
-		buttonText: null,
-    }
-  },
-  mounted() {
-		this.dateNow.setHours(0, 10, 0);
+	components: {
+		FormDescription
+	},
+	data() {
+		return {
+			dateNow: new Date(),
+			hours: null,
+			minutes: null,
+			seconds: null,
+			base: [],
+			isWork: true,
+			textIsWork: 'Работа',
+			disabled: false,
+			isVisible: true,
+			isVisibleReset: true,
+			counterId: null,
+			buttonText: null,
+		}
+	},
+	mounted() {
+		this.dateNow.setHours(0, 0, 5);
 		this.updateTime();
 		this.buttonText = document.querySelector('.start.indentation button')
 	},
-
-  methods: {
-	updateTime() {
+	methods: {
+		updateTime() {
 		this.hours = this.dateNow.getHours() < 10 ? "0" + this.dateNow.getHours() : this.dateNow.getHours();
 		this.minutes = this.dateNow.getMinutes() < 10 ? "0" + this.dateNow.getMinutes() : this.dateNow.getMinutes();
 		this.seconds = this.dateNow.getSeconds() < 10 ? "0" + this.dateNow.getSeconds() : this.dateNow.getSeconds();
-	},
-    addFiveMinutes() {
-		if(this.dateNow.getHours() <= 1) {
-			this.dateNow.setMinutes(this.dateNow.getMinutes() + 5)
-			this.updateTime();
-		}
-    },
-    subtractFiveMinutes() {
-		if(this.dateNow.getMinutes() > 10 && this.dateNow.getHours() == 0 || this.dateNow.getHours() == 1 || this.dateNow.getHours() == 2) {
-			this.dateNow.setMinutes(this.dateNow.getMinutes() - 5)
-			this.updateTime();
-		}
-    },
-	startTimer() {
-		this.toggleVisibility();
-		this.isVisibleReset = false
-		let time = {
-			id: this.base.length,
-			hour: this.hours,
-			minute: this.minutes,
-			second: this.seconds
-		};
-		this.base.push(time);
+		},
+		addMinutes() {
+			if(this.isWork == true) {
+				if(this.dateNow.getHours() <= 1) {
+				this.dateNow.setMinutes(this.dateNow.getMinutes() + 5)
+				this.updateTime();
+				}
+			} else {
+				if(this.dateNow.getHours() <= 1) {
+				this.dateNow.setMinutes(this.dateNow.getMinutes() + 1)
+				this.updateTime();
+				}
+			}
+		},
+		subtractMinutes() {
+			if(this.isWork == true) {
+				if(this.dateNow.getMinutes() > 10 && this.dateNow.getHours() == 0 || this.dateNow.getHours() == 1 || this.dateNow.getHours() == 2) {
+				this.dateNow.setMinutes(this.dateNow.getMinutes() - 5)
+				this.updateTime();
+				}
+			} else {
+				if(this.dateNow.getMinutes() > 5 && this.dateNow.getHours() == 0 || this.dateNow.getHours() == 1 || this.dateNow.getHours() == 2) {
+				this.dateNow.setMinutes(this.dateNow.getMinutes() - 1)
+				this.updateTime();
+				}
+			}
+		},
+		startTimer() {
+			this.toggleVisibility();
+			this.isVisibleReset = false;
+			if(this.isWork == true) {
+				this.textIsWork = 'Работа'
+			} else {
+				this.textIsWork = 'Отдых'
+			}
+			let time = {
+				id: this.base.length,
+				hour: this.hours,
+				minute: this.minutes,
+				second: this.seconds
+			};
+			this.base.push(time);
 
-		
-		const minusTimer = () => {
-			this.dateNow.setSeconds(this.dateNow.getSeconds() - 1);
+			
+			const minusTimer = () => {
+				this.dateNow.setSeconds(this.dateNow.getSeconds() - 1);
+				this.updateTime();
+				if(this.hours == 0 && this.minutes == 0 && this.seconds == 0) {
+					clearInterval(this.counterId);
+					this.isWork = !this.isWork;
+					this.resetTimer();
+					this.textIsWork = 'Отдых';
+					this.isWork == false ? this.textIsWork = 'Отдых' : this.textIsWork = 'Работа';
+				}
+			}
+			this.counterId = setInterval(minusTimer, 1000);
+			
+			if(this.textIsWork == 'Отдых') {
+1
+			}
+
+			/*fetch('http://127.0.0.1:8000',{
+				method: "GET", // *GET, POST, PUT, DELETE, etc.
+				//mode: "no-cors", // no-cors, *cors, same-origin
+
+				headers: {
+				"accept": "application/json",
+				"content-type": "application/json",
+				// 'Content-Type': 'application/x-www-form-urlencoded',
+				},
+			}
+			)
+				.then(response => response.json())
+				.then(data => console.log(data))*/
+		},
+		toggleVisibility() {
+			this.isVisible = !this.isVisible;
+			this.disabled = !this.disabled;
+		},
+		pauseTimer() {
+			clearInterval(this.counterId);
+			this.isVisible = !this.isVisible;
+			this.disabled = !this.disabled;
+			this.buttonText.innerText = 'Продолжить';
+		},
+		resetTimer() {
+			clearInterval(this.counterId);
+			if(this.isWork == true) {
+				this.dateNow.setHours(0, 10, 0);
+			} else {
+				this.dateNow.setHours(0, 0, 6);
+			}
 			this.updateTime();
-			if(this.hours == 0 && this.minutes == 0 && this.seconds == 0) {
-				clearInterval(this.counterId);
+			this.isVisibleReset = true;
+			this.buttonText.innerText = 'Старт';
+			if(this.isVisible == false) {
+				this.toggleVisibility();
 			}
 		}
-		this.counterId = setInterval(minusTimer, 1000);
-
-
-		/*fetch('http://127.0.0.1:8000',{
-			method: "GET", // *GET, POST, PUT, DELETE, etc.
-			//mode: "no-cors", // no-cors, *cors, same-origin
-
-			headers: {
-			"accept": "application/json",
-			"content-type": "application/json",
-			// 'Content-Type': 'application/x-www-form-urlencoded',
-			},
-		}
-		)
-			.then(response => response.json())
-			.then(data => console.log(data))*/
-	},
-	toggleVisibility() {
-		this.isVisible = !this.isVisible;
-		this.disabled = !this.disabled;
-    },
-	pauseTimer() {
-		clearInterval(this.counterId);
-		this.isVisible = !this.isVisible;
-		this.disabled = !this.disabled;
-		this.buttonText.innerText = 'Продолжить';
-	},
-	resetTimer() {
-		clearInterval(this.counterId);
-		this.dateNow.setHours(0, 10, 0);
-		this.updateTime();
-		this.isVisibleReset = true;
-		this.toggleVisibility();
-		this.buttonText.innerText = 'Старт';
 	}
-  }
 }
 
 </script>
@@ -120,7 +161,7 @@ export default {
 body {
 	background: linear-gradient(180deg, rgb(32, 38, 57) 11.4%, rgb(63, 76, 119) 70.2%);
 	color: #fff;
-
+	margin: auto;
 }
 
 /*весь блок*/
