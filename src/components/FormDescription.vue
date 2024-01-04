@@ -20,7 +20,14 @@
     },
     methods: {
       submitForm() {
-        console.log(this.message, this.typeOfTask)
+        console.log(this.typeOfTask, this.message);
+        this.$emit('formSubmitted')
+        /*
+        Передать данные: this.$emit('formSubmitted', {
+          typeOfTask: null,
+          message: '',
+        })
+        */
       },
     },
   };

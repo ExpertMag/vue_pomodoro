@@ -1,30 +1,161 @@
 <template>
 	<section id="wrapper">
-		<div>
-			<div class="indentation">
-				<p>{{ textIsWork }}</p>
+		<div class="" v-if="!isVisibleDescription">
+			<div class="indentation flex">
+				<p style="padding-right: 5px;">Текущее состояние: </p>
+				<button @click="switchState">{{ isWork ? 'Работа' : 'Отдых' }}</button>
 			</div>
-			<div class="indentation">
+			<div class="indentation flex">
 				<button @click="subtractMinutes">Минус</button>
-				<button v-on:click="addMinutes">Плюс</button>
+				<button @click="addMinutes">Плюс</button>
 			</div>
-			<div class="timer indentation"><p class="text">{{ hours }}:{{ minutes }}:{{ seconds }} </p></div>
+			<div class="timer indentation flex"><p class="text">{{ hours }}:{{ minutes }}:{{ seconds }} </p></div>
 			<div class="start indentation">
-				<button @click="startTimer" :disabled=disabled v-show="isVisible">Старт</button>
-				<button @click="pauseTimer" :disabled=!disabled v-show="!isVisible">Пауза</button>
+				<button @click="startTimer" v-show="isVisible">{{ buttonText }}</button>
+				<button @click="pauseTimer" v-show="!isVisible">Пауза</button>
 				<button @click="resetTimer" v-show="!isVisibleReset">Сбросить таймер</button>
 				<!--<span class="start-timer" @click="startTimer" :disabled="disabled == 1 ? true : false">Начать</span>-->
 			</div>
 		</div>
-		<FormDescription v-if="this.isWork == false" />
+		<FormDescription v-if="isVisibleDescription" @formSubmitted="handleFormSubmitted"/>
 	</section>
 </template>
 
-<script>
+<script setup>
 import FormDescription from '@/components/FormDescription.vue';
+import { ref, onMounted } from 'vue'
 
-export default {
-	components: {
+const dateNow = ref(new Date())
+const hours = ref(null)
+const minutes = ref(null)
+const seconds = ref(null)
+const base = ref([])
+const isWork = ref(true)
+const isVisible = ref(true)
+const isVisibleReset = ref(true)
+const isVisibleDescription = ref(false)
+const counterId = ref(null)
+const buttonText = ref('Старт')
+const updateTime = () => {
+	hours.value = dateNow.value.getHours() < 10 ? "0" + dateNow.value.getHours() : dateNow.value.getHours();
+	minutes.value = dateNow.value.getMinutes() < 10 ? "0" + dateNow.value.getMinutes() : dateNow.value.getMinutes();
+	seconds.value = dateNow.value.getSeconds() < 10 ? "0" + dateNow.value.getSeconds() : dateNow.value.getSeconds();
+}
+const toggleVisibility = () => {
+	isVisibleReset.value = !isVisibleReset.value;
+}
+
+onMounted(() => {
+	dateNow.value.setHours(0, 0, 5);
+	updateTime();
+	// buttonText.value = document.querySelector('.start.indentation button')
+
+})
+
+
+function addMinutes() {
+	if(isWork.value == true) {
+		if(dateNow.value.getHours() <= 1) {
+		dateNow.value.setMinutes(dateNow.value.getMinutes() + 5)
+		updateTime();
+		}
+	} else {
+		if(dateNow.value.getHours() <= 1) {
+		dateNow.value.setMinutes(dateNow.value.getMinutes() + 1)
+		updateTime();
+		}
+	}
+}
+
+function subtractMinutes() {
+	if(isWork.value == true) {
+		if(dateNow.value.getMinutes() > 10 && dateNow.value.getHours() == 0 || dateNow.value.getHours() == 1 || dateNow.value.getHours() == 2) {
+		dateNow.value.setMinutes(dateNow.value.getMinutes() - 5)
+		updateTime();
+		}
+	} else {
+		if(dateNow.value.getMinutes() > 5 && dateNow.value.getHours() == 0 || dateNow.value.getHours() == 1 || dateNow.value.getHours() == 2) {
+		dateNow.value.setMinutes(dateNow.value.getMinutes() - 1)
+		updateTime();
+		}
+	}
+}
+function startTimer() {
+	toggleVisibility();
+	isVisible.value = false;
+
+	let time = {
+		id: base.value.length,
+		hour: hours.value,
+		minute: minutes.value,
+		second: seconds.value
+	};
+	base.value.push(time);
+
+	
+	const minusTimer = () => {
+		dateNow.value.setSeconds(dateNow.value.getSeconds() - 1);
+		updateTime();
+		if(hours.value == 0 && minutes.value == 0 && seconds.value == 0) {
+			clearInterval(counterId.value);
+			isWork.value = !isWork.value;
+			if(isWork.value == false) {
+				isVisibleDescription.value = !isVisibleDescription.value;
+			}
+			resetTimer();
+		}
+	}
+	counterId.value = setInterval(minusTimer, 1000);
+	
+
+	/*fetch('http://127.0.0.1:8000',{
+		method: "GET", // *GET, POST, PUT, DELETE, etc.
+		//mode: "no-cors", // no-cors, *cors, same-origin
+
+		headers: {
+		"accept": "application/json",
+		"content-type": "application/json",
+		// 'Content-Type': 'application/x-www-form-urlencoded',
+		},
+	}
+	)
+		.then(response => response.json())
+		.then(data => console.log(data))*/
+}
+
+/*function toggleVisibility() {
+	isVisible.value = !isVisible.value;
+	disabled.value = !disabled.value;
+}*/
+function pauseTimer() {
+	clearInterval(counterId.value);
+	isVisible.value = !isVisible.value;
+	buttonText.value = 'Продолжить';
+}
+function resetTimer() {
+	clearInterval(counterId.value);
+	if(isWork.value == true) {
+		dateNow.value.setHours(0, 0, 10);
+	} else {
+		dateNow.value.setHours(0, 0, 6);
+	}
+	updateTime();
+	isVisible.value = true;
+	buttonText.value = 'Старт';
+	if(isVisibleReset.value == false) {
+		toggleVisibility();
+	}
+}
+function handleFormSubmitted() {
+	isVisibleDescription.value = !isVisibleDescription.value;
+}
+function switchState(){
+	isWork.value = !isWork.value;
+}
+
+
+/*export default {
+/*	components: {
 		FormDescription
 	},
 	data() {
@@ -39,78 +170,82 @@ export default {
 			disabled: false,
 			isVisible: true,
 			isVisibleReset: true,
+			isVisibleDescription: false,
 			counterId: null,
 			buttonText: null,
 		}
 	},
 	mounted() {
-		this.dateNow.setHours(0, 0, 5);
-		this.updateTime();
-		this.buttonText = document.querySelector('.start.indentation button')
-	},
-	methods: {
-		updateTime() {
-		this.hours = this.dateNow.getHours() < 10 ? "0" + this.dateNow.getHours() : this.dateNow.getHours();
-		this.minutes = this.dateNow.getMinutes() < 10 ? "0" + this.dateNow.getMinutes() : this.dateNow.getMinutes();
-		this.seconds = this.dateNow.getSeconds() < 10 ? "0" + this.dateNow.getSeconds() : this.dateNow.getSeconds();
-		},
-		addMinutes() {
-			if(this.isWork == true) {
-				if(this.dateNow.getHours() <= 1) {
-				this.dateNow.setMinutes(this.dateNow.getMinutes() + 5)
-				this.updateTime();
+		dateNow.value.setHours(0, 0, 5);
+		updateTime();
+		buttonText.value = document.querySelector('.start.indentation button')
+	},*/
+	/*methods: { */
+		/*updateTime() {
+		hours.value = dateNow.value.getHours() < 10 ? "0" + dateNow.value.getHours() : dateNow.value.getHours();
+		minutes.value = dateNow.value.getMinutes() < 10 ? "0" + dateNow.value.getMinutes() : dateNow.value.getMinutes();
+		seconds.value = dateNow.value.getSeconds() < 10 ? "0" + dateNow.value.getSeconds() : dateNow.value.getSeconds();
+		},*/
+		/*function addMinutes() {
+			if(isWork.value == true) {
+				if(dateNow.value.getHours() <= 1) {
+				dateNow.value.setMinutes(dateNow.value.getMinutes() + 5)
+				updateTime();
 				}
 			} else {
-				if(this.dateNow.getHours() <= 1) {
-				this.dateNow.setMinutes(this.dateNow.getMinutes() + 1)
-				this.updateTime();
+				if(dateNow.value.getHours() <= 1) {
+				dateNow.value.setMinutes(dateNow.value.getMinutes() + 1)
+				updateTime();
 				}
 			}
 		},
 		subtractMinutes() {
-			if(this.isWork == true) {
-				if(this.dateNow.getMinutes() > 10 && this.dateNow.getHours() == 0 || this.dateNow.getHours() == 1 || this.dateNow.getHours() == 2) {
-				this.dateNow.setMinutes(this.dateNow.getMinutes() - 5)
-				this.updateTime();
+			if(isWork.value == true) {
+				if(dateNow.value.getMinutes() > 10 && dateNow.value.getHours() == 0 || dateNow.value.getHours() == 1 || dateNow.value.getHours() == 2) {
+				dateNow.value.setMinutes(dateNow.value.getMinutes() - 5)
+				updateTime();
 				}
 			} else {
-				if(this.dateNow.getMinutes() > 5 && this.dateNow.getHours() == 0 || this.dateNow.getHours() == 1 || this.dateNow.getHours() == 2) {
-				this.dateNow.setMinutes(this.dateNow.getMinutes() - 1)
-				this.updateTime();
+				if(dateNow.value.getMinutes() > 5 && dateNow.value.getHours() == 0 || dateNow.value.getHours() == 1 || dateNow.value.getHours() == 2) {
+				dateNow.value.setMinutes(dateNow.value.getMinutes() - 1)
+				updateTime();
 				}
 			}
 		},
 		startTimer() {
 			this.toggleVisibility();
-			this.isVisibleReset = false;
-			if(this.isWork == true) {
-				this.textIsWork = 'Работа'
+			isVisible.valueReset = false;
+			if(isWork.value == true) {
+				textIsWork.value = 'Работа'
 			} else {
-				this.textIsWork = 'Отдых'
+				textIsWork.value = 'Отдых'
 			}
 			let time = {
-				id: this.base.length,
-				hour: this.hours,
-				minute: this.minutes,
-				second: this.seconds
+				id: base.value.length,
+				hour: hours.value,
+				minute: minutes.value,
+				second: seconds.value
 			};
-			this.base.push(time);
+			base.value.push(time);
 
 			
 			const minusTimer = () => {
-				this.dateNow.setSeconds(this.dateNow.getSeconds() - 1);
-				this.updateTime();
-				if(this.hours == 0 && this.minutes == 0 && this.seconds == 0) {
+				dateNow.value.setSeconds(dateNow.value.getSeconds() - 1);
+				updateTime();
+				if(hours.value == 0 && minutes.value == 0 && seconds.value == 0) {
 					clearInterval(this.counterId);
-					this.isWork = !this.isWork;
+					isWork.value = !isWork.value;
+					if(isWork.value == false) {
+						isVisibleDescription.value = !isVisibleDescription.value;
+					}
 					this.resetTimer();
-					this.textIsWork = 'Отдых';
-					this.isWork == false ? this.textIsWork = 'Отдых' : this.textIsWork = 'Работа';
+					textIsWork.value = 'Отдых';
+					isWork.value == false ? textIsWork.value = 'Отдых' : textIsWork.value = 'Работа';
 				}
 			}
 			this.counterId = setInterval(minusTimer, 1000);
 			
-			if(this.textIsWork == 'Отдых') {
+			if(textIsWork.value == 'Отдых') {
 1
 			}
 
@@ -127,33 +262,40 @@ export default {
 			)
 				.then(response => response.json())
 				.then(data => console.log(data))*/
-		},
+/*		},
 		toggleVisibility() {
-			this.isVisible = !this.isVisible;
-			this.disabled = !this.disabled;
+			isVisible.value = !isVisible.value;
+			disabled.value = !disabled.value;
 		},
 		pauseTimer() {
 			clearInterval(this.counterId);
-			this.isVisible = !this.isVisible;
-			this.disabled = !this.disabled;
-			this.buttonText.innerText = 'Продолжить';
+			isVisible.value = !isVisible.value;
+			disabled.value = !disabled.value;
+			buttonText.value.innerText = 'Продолжить';
 		},
 		resetTimer() {
 			clearInterval(this.counterId);
-			if(this.isWork == true) {
-				this.dateNow.setHours(0, 10, 0);
+			if(isWork.value == true) {
+				dateNow.value.setHours(0, 0, 10);
 			} else {
-				this.dateNow.setHours(0, 0, 6);
+				dateNow.value.setHours(0, 0, 6);
 			}
-			this.updateTime();
-			this.isVisibleReset = true;
-			this.buttonText.innerText = 'Старт';
-			if(this.isVisible == false) {
+			updateTime();
+			isVisible.valueReset = true;
+			buttonText.value.innerText = 'Старт';
+			if(isVisible.value == false) {
 				this.toggleVisibility();
 			}
+		},
+		handleFormSubmitted() {
+		isVisibleDescription.value = !isVisibleDescription.value;
+		},
+		switchState(){
+			isWork.value = !isWork.value;
+			console.log(isWork.value)
 		}
 	}
-}
+}*/
 
 </script>
 
@@ -162,6 +304,12 @@ body {
 	background: linear-gradient(180deg, rgb(32, 38, 57) 11.4%, rgb(63, 76, 119) 70.2%);
 	color: #fff;
 	margin: auto;
+}
+
+.flex {
+	display: flex;
+    justify-content: center;
+	align-items: center;
 }
 
 /*весь блок*/
